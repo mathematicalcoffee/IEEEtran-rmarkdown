@@ -1,0 +1,297 @@
+---
+# -------------- Paper stuff. fill me out. ---------------- #
+title: Bare Demo of RMarkdown port of IEEEtran.cls for IEEE conferences
+date: "`r format(Sys.time(), format='%Y-%m-%d %H:%M:%S %z')`" # doesn't get shown in 
+# author:
+#     - name: Amy Chan
+#       affiliation:
+#         - 'Email: mathematical.coffee@gmail.com'
+#     - name: Michael Shell
+#       affiliation:
+#         - School of Electrical and
+#         - Computer Engineering
+#         - Georgia Institute of Technology
+#         - Atlanta, Georgia 30332--0250
+#     - name: Homer Simpson
+#       affiliation:
+#         - Twentieth Century Fox
+#         - Springfield, USA
+#     - name:
+#         - James Kirk
+#         - Montgomery Scott
+#       affiliation:
+#         - Starfleet Academy
+#         - San Francisco, California 96678--2391
+#         - 'Telephone: (800) 555--1212'
+#         - 'Fax: (888) 555--1212'
+author:
+    - name: Amy Chan
+      affiliation: 4
+    - name: ', Michael Shell'
+      affiliation: 1
+    - name: ', Homer Simpson'
+      affiliation: 2
+    - name: ', James Kirk'
+      affiliation: 3
+    - name: '\ and John Doe'
+      affiliation: [2,3]
+affiliation:
+    - key: 1
+      name:
+        - School of Electrical and Computer Engineering
+        - Georgia Institute of Technology, Atlanta, Georgia 30332--0250
+    - key: 4
+      name:
+        - 'Email: mathematical.coffee@gmail.com'
+    - key: 2
+      name:
+        - Twentieth Century Fox, Springfield, USA
+    - key: 3
+      name:
+        - Starfleet Academy, San Francisco, California 96678--2391
+        - 'Telephone: (800) 555--1212, Fax: (888) 555--1212'
+abstract: |
+  We demonstrate the use of an RMarkdown template for the IEEEtran style.
+  For now it's just conference style, but we will eventually expand (maybe).
+  
+# This will be placed into \bibliography{}
+bibliography:  'IEEEabrv,./library'
+  
+# ----------- RMarkdown config ---------
+# You can change `in_header` e.g.
+output:
+  pdf_document:
+    template: "lib/ieee-pandoc-template.tex"
+    #template: "lib/ieee-template.tex"
+    includes:
+      in_header:
+      - ./preamble.tex
+    keep_tex: yes # if you wish to keep the intermediate tex file
+    fig_caption: yes # show figure captions
+    pandoc_args: # Add to it if you want, but leave pandoc-crossref and --natbib
+    - --filter
+    - pandoc-crossref
+    - --natbib
+# --------- Template config. can generally be left as-is ---------
+classoption: conference # eg draftcls conference
+link-citations: yes # citations have links to bibliography
+reference-section-title: References # title used for biliography
+papersize: a4paper
+# leave these below options as-is unless you know what you're doing.
+natbib: yes
+documentclass: IEEEtran
+# ----------- Pandoc crossref config ---------
+# pandoc-crossref
+eqnPrefix:
+    - ''
+    - ''
+figPrefix:
+  - "figure"
+  - "figures"
+tblPrefix:
+  - "table"
+  - "tables"
+secPrefix:
+  - "section"
+  - "sections"
+autoSectionLabels: true # prepend sec: to section titles
+---
+```{r setup, include=F}
+library(pander)
+library(knitr)
+# where the figures will be
+opts_chunk$set(fig.path='figure/')
+# code chunk options: tidy; wrap at 40 characters
+opts_knit$set(tidy=T, tidy.opts=list(width.cutoff=40))
+
+# Some helpful latex-generating functions for when you need more control.
+# Optional.
+ 
+# Helpful for latex lables
+library(xtable)
+options(xtable.caption.placement='top',
+        xtable.table.placement='!t',
+        xtable.include.rownames=F,
+        xtable.comment=F)
+
+#' Outputs LaTeX code for a figure environment with caption and label and placement
+#'
+#' The RMD -> MD conversion drops `fig.pos` and labels when you run knitr so I
+#' need to output LaTeX explicitly.
+#'
+#' Use Hmisc or xtab if you want tables.
+#'
+#' If you want to do subfigures (using subfloat) then provide multiple filenames;
+#'  the first element of the caption is the overall and the rest are individual.
+#' @family pandoc helpers
+#' @export
+# TODO: vectorise label in the same way as width, caption
+# TODO: use \hfil between the \subfloat s for equal spacing (as in bare_conf.tex)
+latex.figure <- function (fname, caption, label, placement='!t', floating=F, width='\\columnwidth', subfloat=length(fname) > 1, linebreaks.after=NULL) {
+    if (subfloat && length(caption) == length(fname))
+        caption <- c('', caption)
+    else if (length(caption) > 1 && length(caption) != length(fname) && length(caption) != length(fname) + 1)
+        stop("Length of filenames doesn't match length of captions (+1 if subfloat)")
+    cat(sprintf('\\begin{figure%s}[%s]%%\n\\centering%%\n',
+                ifelse(floating, '*', ''), placement))
+    figs <- sprintf('\\includegraphics[width=%s]{%s}', width, fname)
+    if (subfloat)
+        figs <- sprintf('\\subfloat[%s]{%s}', caption[2:(length(fname) + 1)], figs)
+    if (!is.null(linebreaks.after)) {
+        figs[linebreaks.after] <- paste0(figs[linebreaks.after], '\\\\')
+    }
+    figs <- paste0(figs, '%')
+    cat(figs, sep='\n')
+    # TODO should omit \caption{} if not provided for subfloat (also for normal pics)
+    cat(sprintf('\\caption{%s}%%\n\\label{%s}%%\n\\end{figure%s}\n',
+        caption[1], label, ifelse(floating, '*', '')))
+}
+```
+
+# Introduction
+
+This demo file is intended to serve as a "starter file" for IEEE conference papers produced under \LaTeX\ using IEEEtran.cls version 1.8b and later.
+I wish you the best of success.
+
+\hfill mds
+
+\hfill August 26, 2015
+
+Use `rmarkdown::render()` to create this document; it essentially calls `knit()` to go from RMD to MD, and then `pandoc` (with all the configurations in the YAML) to go from MD to PDF.
+
+One could try to compile to HTML, but of course none of the IEEE styles will be applied. And if any raw \LaTeX\ has been put in the document (as is typically the case for a paper, as you may need the extra power of \LaTeX\ to provide specific layout), this will of course not compile in HTML.
+
+# Examples
+
+## Knitr
+
+You can use knitr as usual. The `echo=F` chunk option should probably be set (unless you want to show the R code in the paper). Also since this is a two-column layout it'll probably overflow, so you will need to either
+
+* wrap the code yourself (by default knitr does not tidy code), or
+* enable code tidying and specify the width: `opts_knit$set(tidy=T, tidy.opts=list(width.cutoff=40))`.
+* NB: the `size` chunk option (e.g. `opts_chunk$set(size="small")` only works in Rnw, not in Rmd).
+
+The width is pretty small. For this document, you can fit about 42 characters before it overflows off the side (see the example in @sec:figures).
+
+## Figures
+
+You can of course generate plots using R and they will be inserted with knitr.
+However, since knitr goes from MD to RMD, they will be inserted with markdown format, not TeX format.
+I have configured knitr to put figures in the `figure/` directory (`opts_chunk$set(fig.path='figure/')`) so that is where the plot will be.
+
+```{r iris.plot, fig.cap="Sepal lengths for various species of iris.\\label{fig:iris}"}
+plot(Sepal.Length ~ Species, iris)
+```
+
+See @fig:iris. (I am unsure why this is "Fig. 1" in the caption...is it a knitr/rmarkdown/pandoc thing, or a IEEEtran thing?)
+
+In practice, you will probably want to write your figure code in raw \LaTeX\ for greater control.
+In the setup chunk of this Rmd is a function `latex.figure` which is an example of outputting raw \LaTeX\ for a figure. Tweak as you wish. (Surely there's a library like `xtable` for this?)
+
+```{r raw.iris.plot, results='asis'}
+latex.figure(
+  'figure/iris.plot-1.pdf',
+  caption='Another plot of sepal lengths
+           for the various species of iris.',
+  label='fig:iris2')
+```
+
+The `latex.figure` also has basic support for subfloats: just provide multiple paths.
+If there are as many captions as figures, one is used for each.
+If there is one more than the number of figures, the first is used as the "master" caption and the rest as subfigure captions. If there is only one caption, it's used for the figure and no subcaptions are added.
+See @fig:polynomials for the result.
+
+```{r example.subfig, results='asis'}
+# generate and save some pictures
+n = 1:5
+figs = sprintf('figure/x%i.png', n)
+for (nn in n) {
+  png(filename=figs[nn], width=480, height=300)
+  plot(1:10, (1:10)^nn)
+  dev.off()
+}
+
+# show as floating figure with 3 subfig
+latex.figure(
+  figs,
+  caption=c("Polynomials",
+            sprintf("$x^%i$", n)),
+  label='fig:polynomials',
+  linebreaks.after=3,
+  width='.6\\columnwidth',
+  floating=T)
+```
+
+Note that often IEEE papers with subfigures do not employ subfigure captions, but instead will reference/describe all of them (a), (b), etc., within the main caption.
+
+Note that the IEEE typically puts floats only at the top, even when this results in a large percentage of a column being occupied by floats.
+
+
+## Tables
+
+You should not use the pandoc syntax, because it uses the `longtable` package (this is hard-coded in) and `longtable` doesn't play well with two column input.
+Use something like Hmisc or xtable to give \LaTeX\ output and provide extra control (e.g. @tbl:iris.xtable).
+
+```{r xtable, results='asis'}
+print(xtable(
+  iris[sample(nrow(iris), 6), ],
+  caption='Example of the iris dataset',
+  label='tbl:iris.xtable',
+  align=c(rep('r', 5), 'l')))
+```
+
+You may wish the table to span multiple columns. Use `table*` instead of `table` (@tbl:xtable.floating). Note that the `floating.environment` is an argument to `print.xtable`, not to `xtable`.
+
+```{r xtable.floating, results='asis'}
+print(xtable(
+    head(mtcars),
+    caption='Example of the motor trend
+             car road tests dataset',
+    label='tbl:xtable.floating'),
+  floating.environment='table*')
+```
+
+Note that, for IEEE style tables, given that table captions serve much like titles, captions are usually capitalized except for words such as a, an, and, as, at, but, by, for, in, nor, of, on, or, the, to and up, which are usually not capitalized unless they are the first or last word of the caption.
+Table text will default to `\footnotesize` as the IEEE normally uses this smaller font for tables.
+
+Note that the IEEE typically puts floats only at the top, even when this results in a large percentage of a column being occupied by floats.
+
+## Citing
+
+Examples of citing one author [@Besag1974] and two authors [@Besag1974; @Besag1986].
+
+## Equations
+
+Are as you would hope. You can use pandoc-crossref syntax to do labels.
+i.e.
+
+```
+$$
+e = m c^2
+$$ {#eq:einstein}
+```
+
+yields
+
+$$
+e = m c^2.
+$$ {#eq:einstein}
+
+One can use `@eq:einstein` to refer to the equation, e.g. @eq:einstein. The only caveat is that the equation needs to be in its own paragraph if you wish to number it, meaning that in the resultant tex and pdf, the equation is on its own line. (If you don't wish to number the equation, it doesn't have to be on its own paragraph and will render in the paragraph as you would expect).
+
+I haven't found a good fix for this yet. It is a requirement of `pandoc-crossref`. You have to go to the TeX and remove these extra blank lines (where appropriate) before compiling. I add a comment `% FIXME ALIGNMENT` to these equations to make them easier to find.
+
+# Conclusion
+
+Hopefully you have been given a brief tour of the capabilities of this setup and will now go forth and author IEEEtran-style papers using RMarkdown with (relative) ease.
+
+# Acknowledgement {-}
+
+This template would not be possible without
+[Michael Shell's IEEEtran files](https://www.ctan.org/tex-archive/macros/latex/contrib/IEEEtran/?lang=en)
+[pandoc](http://pandoc.org/),
+[pandoc-crossref](https://github.com/lierdakil/pandoc-crossref),
+[knitr](http://yihui.name/knitr/),
+[rmarkdown](http://rmarkdown.rstudio.com/),
+and heavy googling within [StackOverflow](http://stackoverflow.com/).
+And props to [Rstudio](https://www.rstudio.com/) too. It's not required for this, but it certainly makes the whole process much easier. And anyone else I forgot.

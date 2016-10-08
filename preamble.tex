@@ -1,0 +1,20 @@
+% Put your preamble here. Example.
+% subfigures
+\usepackage{subfig}
+% dots in filenames
+\usepackage{graphicx, grffile}
+% bold math
+\usepackage{bm}
+% colours
+\usepackage[usenames,dvipsnames]{xcolor}
+% suppress month in bibliography
+%\AtEveryBibitem{\clearfield{month}}
+%\AtEveryCitekey{\clearfield{month}}
+
+% texdef -t latex -f {cmdname} to see if cmd is already defined
+
+% Letters in fancy font (expectation, integers, reals, normal dist)
+\newcommand{\E}[1]{\operatorname{\mathbb{E}}{\left[#1\right]}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathcal{N}}
